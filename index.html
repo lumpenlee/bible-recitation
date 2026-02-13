@@ -6,7 +6,8 @@
     <title>계시록 암송 마스터</title>
     <style>
         :root {
-            --primary: #4CAF50;
+            --primary: #4CAF50;    /* 기본 녹색 */
+            --recording: #f44336;  /* 녹음 중 빨간색 */
             --secondary: #2196F3;
             --bg: #f4f6f8;
             --surface: #ffffff;
@@ -26,7 +27,6 @@
             min-height: 100vh;
         }
 
-        /* 컨트롤 영역 (장/절 선택) */
         .controls {
             width: 100%;
             max-width: 600px;
@@ -38,7 +38,6 @@
             box-sizing: border-box;
         }
 
-        /* 드롭다운 스타일 */
         select {
             width: 100%;
             padding: 12px;
@@ -50,13 +49,12 @@
             font-weight: bold;
         }
 
-        /* 절 버튼 그리드 */
         .verse-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
             gap: 8px;
             max-height: 150px;
-            overflow-y: auto; /* 절이 많으면 스크롤 */
+            overflow-y: auto;
             padding-right: 5px;
         }
 
@@ -77,7 +75,6 @@
             box-shadow: 0 2px 5px rgba(33, 150, 243, 0.3);
         }
 
-        /* 암송 화면 영역 */
         .recitation-area {
             width: 100%;
             max-width: 600px;
@@ -111,7 +108,7 @@
             user-select: none;
         }
 
-        /* 마이크 버튼 */
+        /* --- 버튼 스타일 수정됨 --- */
         .mic-wrapper {
             position: relative;
             width: 80px;
@@ -124,7 +121,7 @@
             height: 100%;
             border-radius: 50%;
             border: none;
-            background-color: var(--primary);
+            background-color: var(--primary); /* 평소엔 초록색 */
             color: white;
             font-size: 32px;
             cursor: pointer;
@@ -134,24 +131,24 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: background-color 0.3s ease, transform 0.1s;
         }
 
-        .mic-ripple {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            border-radius: 50%;
-            border: 2px solid var(--primary);
-            opacity: 0;
-            z-index: 1;
+        .mic-btn:active {
+            transform: scale(0.95);
         }
 
-        .listening .mic-ripple {
-            animation: ripple 1.5s infinite;
+        /* 녹음 중일 때 적용되는 클래스 */
+        .mic-btn.listening {
+            background-color: var(--recording) !important; /* 빨간색 강제 적용 */
+            box-shadow: 0 0 0 5px rgba(244, 67, 54, 0.3); /* 빨간 테두리 효과 */
+            animation: pulse-red 1.5s infinite;
         }
 
-        @keyframes ripple {
-            0% { transform: scale(1); opacity: 0.8; }
-            100% { transform: scale(1.6); opacity: 0; }
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(244, 67, 54, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0); }
         }
 
         .result-box {
@@ -198,22 +195,19 @@
         <div class="toggle-link" onclick="toggleBlur()">👀 정답 보기/가리기</div>
 
         <div class="mic-wrapper" id="mic-wrapper">
-            <button class="mic-btn" onclick="toggleRecording()">🎙️</button>
-            <div class="mic-ripple"></div>
+            <button id="main-mic-btn" class="mic-btn" onclick="toggleRecording()">🎙️</button>
         </div>
-        <div id="status-msg" style="color:#888; font-size:0.8rem;">버튼을 눌러 암송 시작</div>
+        <div id="status-msg" style="color:#888; font-size:0.8rem; height:20px; margin-top:10px;">버튼을 눌러 암송 시작</div>
 
         <div id="result-box" class="result-box" style="display:none;"></div>
     </div>
 
 <script>
     // ==========================================
-    // 1. 성경 데이터 (요한계시록)
+    // 1. 성경 데이터 (이전에 입력하신 데이터를 여기에 채워넣으세요)
     // ==========================================
-    // chatGPT 출력 제한으로 인해 1장 전체와 22장 예시만 넣었습니다.
-    // 나머지 장은 아래 형식대로 콤마(,)로 구분하여 채워 넣으시면 됩니다.
     const bibleData = {
-"1" :[
+        "1" :[
 "예수 그리스도의 계시라 / 이는 하나님이 그에게 주사 반드시 속히 될 일을 그 종들에게 보이시려고 / 그 천사를 그 종 요한에게 보내어 지시하신 것이라",
 "요한은 하나님의 말씀과 예수 그리스도의 증거 / 곧 자기의 본 것을 다 증거하였느니라",
 "이 예언의 말씀을 읽는 자와 듣는 자들과 / 그 가운데 기록한 것을 지키는 자들이 복이 있나니 때가 가까움이라",
@@ -640,83 +634,70 @@
 "이것들을 증거하신 이가 가라사대 / 내가 진실로 속히 오리라 하시거늘 / 아멘 주 예수여 오시옵소서",
 "주 예수의 은혜가 모든 자들에게 있을지어다 아멘"]
     };
-
     // ==========================================
-    // 2. 앱 로직
+    // 2. 앱 로직 (수정 금지 영역)
     // ==========================================
     
     let currentChapter = 1;
-    let currentVerseIdx = 0; // 0부터 시작 (화면 표시는 +1)
+    let currentVerseIdx = 0; 
     
     const chapterSelect = document.getElementById('chapter-select');
     const verseContainer = document.getElementById('verse-container');
     const targetTextEl = document.getElementById('target-text');
     const refEl = document.getElementById('current-ref');
     const resultBox = document.getElementById('result-box');
-    const micWrapper = document.getElementById('mic-wrapper');
     const statusMsg = document.getElementById('status-msg');
+    const micBtn = document.getElementById('main-mic-btn'); // 버튼 ID 참조
 
-    // 초기화
     function init() {
-        // 1. 장(Chapter) 드롭다운 생성 (1~22장)
         for (let i = 1; i <= 22; i++) {
             const option = document.createElement('option');
             option.value = i;
             option.text = `요한계시록 ${i}장`;
             chapterSelect.appendChild(option);
         }
-
-        // 2. 1장 로드
         loadChapter(1);
     }
 
-    // 장 변경 시 호출
     function changeChapter() {
         const selectedCh = parseInt(chapterSelect.value);
         loadChapter(selectedCh);
     }
 
-    // 해당 장의 절 버튼들 생성
     function loadChapter(ch) {
         currentChapter = ch;
-        verseContainer.innerHTML = ''; // 기존 버튼 초기화
-
-        // 데이터가 없는 장 처리 (예외처리)
+        verseContainer.innerHTML = ''; 
         const verses = bibleData[ch] || ["데이터가 입력되지 않았습니다."];
 
         verses.forEach((verseText, index) => {
             const btn = document.createElement('button');
             btn.className = 'verse-btn';
-            btn.innerText = index + 1; // 1절, 2절...
+            btn.innerText = index + 1;
             btn.onclick = () => selectVerse(index);
             verseContainer.appendChild(btn);
         });
-
-        // 1절 자동 선택
         selectVerse(0);
     }
 
-    // 절 선택 시 호출
     function selectVerse(index) {
         currentVerseIdx = index;
         
-        // 1. UI 업데이트 (버튼 활성화 스타일)
         const buttons = verseContainer.getElementsByClassName('verse-btn');
         for (let btn of buttons) btn.classList.remove('active');
         if(buttons[index]) buttons[index].classList.add('active');
 
-        // 2. 본문 텍스트 업데이트
         const verses = bibleData[currentChapter] || ["데이터 없음"];
         const verseText = verses[index] || "내용 없음";
 
         targetTextEl.innerText = verseText;
         refEl.innerText = `요한계시록 ${currentChapter}:${index + 1}`;
         
-        // 3. 상태 리셋
-        targetTextEl.classList.add('blur'); // 다시 가리기
+        targetTextEl.classList.add('blur'); 
         resultBox.style.display = 'none';
         resultBox.innerHTML = '';
-        statusMsg.innerText = "버튼을 눌러 암송 시작";
+        
+        // 버튼 상태 리셋
+        resetMicButton();
     }
 
     function toggleBlur() {
@@ -724,7 +705,7 @@
     }
 
     // ==========================================
-    // 3. 음성 인식 및 결과 처리
+    // 3. 음성 인식 및 결과 처리 (UI 업데이트 로직 추가됨)
     // ==========================================
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition = null;
@@ -736,17 +717,20 @@
         recognition.continuous = false;
         recognition.interimResults = false;
 
+        // 녹음 시작 시 UI 변경
         recognition.onstart = function() {
             isRecording = true;
-            micWrapper.classList.add('listening');
-            statusMsg.innerText = "듣고 있습니다... 말씀하세요!";
+            micBtn.classList.add('listening'); // 버튼 빨간색 변환
+            micBtn.innerHTML = "⏹"; // 아이콘을 정지(네모)로 변경
+            statusMsg.innerText = "🔴 녹음 중... (다시 눌러 멈춤)"; // 문구 변경
+            statusMsg.style.color = "#f44336"; // 문구 색상 빨강
+            statusMsg.style.fontWeight = "bold";
             resultBox.style.display = 'none';
         };
 
+        // 녹음 종료 시 UI 변경
         recognition.onend = function() {
-            isRecording = false;
-            micWrapper.classList.remove('listening');
-            statusMsg.innerText = "터치하여 다시 시작";
+            resetMicButton();
         };
 
         recognition.onresult = function(event) {
@@ -756,28 +740,40 @@
 
         recognition.onerror = function(event) {
             console.error(event.error);
-            isRecording = false;
-            micWrapper.classList.remove('listening');
-            statusMsg.innerText = "오류: " + event.error;
+            resetMicButton();
+            statusMsg.innerText = "오류 발생: " + event.error;
         };
     } else {
         alert("이 브라우저는 음성 인식을 지원하지 않습니다 (Chrome, Safari 사용 권장).");
+        micBtn.disabled = true;
+    }
+
+    // 녹음 버튼 상태를 원래대로 되돌리는 함수
+    function resetMicButton() {
+        isRecording = false;
+        micBtn.classList.remove('listening'); // 빨간색 제거
+        micBtn.innerHTML = "🎙️"; // 아이콘 복구
+        statusMsg.innerText = "버튼을 눌러 암송 시작";
+        statusMsg.style.color = "#888";
+        statusMsg.style.fontWeight = "normal";
     }
 
     function toggleRecording() {
         if (!recognition) return;
-        if (isRecording) recognition.stop();
-        else recognition.start();
+        
+        if (isRecording) {
+            recognition.stop(); // 녹음 중이면 멈춤
+        } else {
+            recognition.start(); // 아니면 시작
+        }
     }
 
     function checkAnswer(userSpeech) {
         resultBox.style.display = 'block';
         
-        // 현재 선택된 정답 구절 가져오기
         const verses = bibleData[currentChapter];
         const correctText = verses ? verses[currentVerseIdx] : "";
         
-        // 1. 단순 비교를 위한 정규화 (공백/특수문자 제거)
         const cleanUser = userSpeech.replace(/[^\w\sㄱ-ㅎㅏ-ㅣ가-힣]/g, '').replace(/\s+/g, '');
         const cleanTarget = correctText.replace(/[^\w\sㄱ-ㅎㅏ-ㅣ가-힣]/g, '').replace(/\s+/g, '');
 
@@ -785,10 +781,9 @@
 
         if (cleanUser === cleanTarget) {
             displayHTML += `<div class="correct">🎉 완벽합니다! 정답입니다.</div>`;
-            targetTextEl.classList.remove('blur'); // 정답 맞추면 본문 공개
+            targetTextEl.classList.remove('blur'); 
         } else {
             displayHTML += `<div style="color:#f44336">❌ 아쉽네요. 다시 시도해보세요.</div>`;
-            // 간단한 틀린 부분 표시 (길이 비교 등)
             displayHTML += `<div style="font-size:0.8rem; color:#888; margin-top:5px;">(팁: 조사나 어미가 정확해야 합니다)</div>`;
         }
 
