@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>계시록 암송 마스터 (최종비교)</title>
+    <title>계시록 암송 마스터 (Compact)</title>
     <style>
         :root {
             --primary: #4CAF50;
@@ -27,104 +27,80 @@
 
         .app-container {
             width: 100%;
-            max-width: 1200px;
-            padding: 20px;
+            max-width: 800px; /* 모바일 최적화를 위해 폭 조정 */
+            padding: 15px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 15px;
             box-sizing: border-box;
         }
 
-        .panel-controls {
+        /* --- [NEW] 상단 컨트롤 바 (한 줄 디자인) --- */
+        .control-bar {
             background: var(--surface);
-            padding: 20px;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-            flex: 1;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #444;
+            flex-wrap: wrap; /* 화면이 너무 작으면 줄바꿈 허용 */
         }
 
+        /* 드롭다운 스타일 최적화 */
+        .custom-select {
+            padding: 8px 12px;
+            font-size: 1.1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            font-weight: bold;
+            color: #333;
+            cursor: pointer;
+            outline: none;
+        }
+        
+        .custom-select:focus {
+            border-color: var(--primary);
+            background-color: #fff;
+        }
+
+        .label-text {
+            white-space: nowrap; /* 줄바꿈 방지 */
+        }
+
+        /* 암송 패널 */
         .panel-recitation {
             background: var(--surface);
             padding: 30px 20px;
             border-radius: 16px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-            flex: 2;
             text-align: center;
             display: flex;
             flex-direction: column;
             align-items: center;
+            min-height: 400px;
         }
 
-        @media (min-width: 768px) {
-            .app-container {
-                flex-direction: row;
-                align-items: flex-start;
-                padding-top: 40px;
-            }
-            .panel-controls {
-                position: sticky;
-                top: 20px;
-                max-width: 350px;
-            }
-            .verse-btn:hover {
-                background-color: #ddd;
-                transform: translateY(-2px);
-            }
-        }
-
-        select {
-            width: 100%;
-            padding: 12px;
-            font-size: 1.1rem;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            background-color: white;
-            margin-bottom: 20px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .verse-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
-            gap: 8px;
-            max-height: 300px;
-            overflow-y: auto;
-            padding: 2px;
-        }
-
-        .verse-btn {
-            aspect-ratio: 1;
-            background-color: #f5f5f5;
-            border: 1px solid #eee;
-            border-radius: 10px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: #555;
-        }
-
-        .verse-btn.active {
-            background-color: var(--secondary);
-            color: white;
-            font-weight: bold;
-            border-color: var(--secondary);
-            box-shadow: 0 4px 10px rgba(33, 150, 243, 0.3);
-        }
-
+        /* 현재 구절 표시 (작게) */
         .current-ref {
-            font-size: 1rem;
+            font-size: 0.9rem;
             color: var(--secondary);
             font-weight: 800;
             margin-bottom: 15px;
             text-transform: uppercase;
             letter-spacing: 1px;
+            display: none; /* 상단 메뉴가 직관적이라 중복 표시 숨김 (원하면 block으로 변경) */
         }
 
         .target-text {
-            font-size: 1.35rem;
-            line-height: 1.7;
-            margin: 20px 0 30px 0;
+            font-size: 1.3rem;
+            line-height: 1.6;
+            margin: 10px 0 30px 0;
             word-break: keep-all;
             min-height: 80px;
             width: 100%;
@@ -137,6 +113,7 @@
             user-select: none;
         }
 
+        /* 마이크 버튼 UI */
         .mic-wrapper {
             position: relative;
             width: 90px;
@@ -176,12 +153,12 @@
             100% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0); }
         }
 
-        /* 결과 박스 스타일 강화 */
+        /* 결과 박스 */
         .result-box {
             background-color: #fff;
             border: 2px solid #eee;
             border-radius: 12px;
-            padding: 25px;
+            padding: 20px;
             margin-top: 20px;
             text-align: left;
             font-size: 1.1rem;
@@ -217,13 +194,18 @@
 
 <div class="app-container">
     
-    <div class="panel-controls">
-        <h3 style="margin:0 0 15px 0; color:#444;">📖 성경 선택</h3>
-        <label for="chapter-select" style="font-size:0.85rem; color:#888; margin-bottom:5px; display:block;">장 (Chapter)</label>
-        <select id="chapter-select" onchange="changeChapter()"></select>
+    <div class="control-bar">
+        <span class="label-text">계시록</span>
+        
+        <select id="chapter-select" class="custom-select" onchange="changeChapter()">
+            </select>
+        
+        <span class="label-text">장</span>
 
-        <div style="font-size:0.85rem; color:#888; margin-bottom:10px;">절 (Verse)</div>
-        <div id="verse-container" class="verse-grid"></div>
+        <select id="verse-select" class="custom-select" onchange="changeVerseFromDropdown()">
+            </select>
+        
+        <span class="label-text">절</span>
     </div>
 
     <div class="panel-recitation">
@@ -247,7 +229,7 @@
     // 1. 성경 데이터 (여기에 전체 데이터를 넣으세요)
     // ==========================================
     const bibleData = {
-  "1" :[
+    "1" :[
 "예수 그리스도의 계시라 이는 하나님이 그에게 주사 반드시 속히 될 일을 그 종들에게 보이시려고 그 천사를 그 종 요한에게 보내어 지시하신 것이라",
 "요한은 하나님의 말씀과 예수 그리스도의 증거 곧 자기의 본 것을 다 증거하였느니라",
 "이 예언의 말씀을 읽는 자와 듣는 자들과 그 가운데 기록한 것을 지키는 자들이 복이 있나니 때가 가까움이라",
@@ -677,11 +659,13 @@
 
     let currentChapter = 1;
     let currentVerseIdx = 0; 
-    let finalTranscript = ''; // 전체 녹음 내용 저장
-    let isExplicitStop = false; // [핵심] 사용자가 직접 정지 버튼을 눌렀는지 체크
+    let finalTranscript = ''; 
+    let isExplicitStop = false; 
     
+    // [UI 변경] 드롭다운 요소 참조
     const chapterSelect = document.getElementById('chapter-select');
-    const verseContainer = document.getElementById('verse-container');
+    const verseSelect = document.getElementById('verse-select'); // 절 선택 드롭다운
+    
     const targetTextEl = document.getElementById('target-text');
     const refEl = document.getElementById('current-ref');
     const resultBox = document.getElementById('result-box');
@@ -689,10 +673,11 @@
     const micBtn = document.getElementById('main-mic-btn');
 
     function init() {
+        // 장(Chapter) 드롭다운 채우기
         for (let i = 1; i <= 22; i++) {
             const option = document.createElement('option');
             option.value = i;
-            option.text = `요한계시록 ${i}장`;
+            option.text = `${i}`; // "1", "2" ...
             chapterSelect.appendChild(option);
         }
         loadChapter(1);
@@ -703,27 +688,36 @@
         loadChapter(selectedCh);
     }
 
+    // [변경된 로직] 버튼 생성 -> 드롭다운 Option 생성
     function loadChapter(ch) {
         currentChapter = ch;
-        verseContainer.innerHTML = ''; 
-        const verses = bibleData[ch] || ["데이터가 입력되지 않았습니다."];
+        verseSelect.innerHTML = ''; // 기존 절 목록 초기화
 
+        const verses = bibleData[ch] || ["데이터 없음"];
+
+        // 절 드롭다운 채우기
         verses.forEach((verseText, index) => {
-            const btn = document.createElement('button');
-            btn.className = 'verse-btn';
-            btn.innerText = index + 1;
-            btn.onclick = () => selectVerse(index);
-            verseContainer.appendChild(btn);
+            const option = document.createElement('option');
+            option.value = index; // 0부터 시작하는 인덱스 저장
+            option.text = `${index + 1}`; // 화면엔 1부터 표시
+            verseSelect.appendChild(option);
         });
+
+        // 1절 자동 선택
         selectVerse(0);
+    }
+
+    // 드롭다운 변경 시 호출되는 함수
+    function changeVerseFromDropdown() {
+        const selectedIdx = parseInt(verseSelect.value);
+        selectVerse(selectedIdx);
     }
 
     function selectVerse(index) {
         currentVerseIdx = index;
         
-        const buttons = verseContainer.getElementsByClassName('verse-btn');
-        for (let btn of buttons) btn.classList.remove('active');
-        if(buttons[index]) buttons[index].classList.add('active');
+        // 드롭다운 값 동기화 (코드에서 호출될 때를 위해)
+        verseSelect.value = index;
 
         const verses = bibleData[currentChapter] || ["데이터 없음"];
         const verseText = verses[index] || "내용 없음";
@@ -743,7 +737,7 @@
     }
 
     // ==========================================
-    // 음성 인식 로직
+    // 음성 인식 로직 (변경 없음)
     // ==========================================
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition = null;
@@ -767,15 +761,12 @@
             resultBox.innerHTML = "<div style='color:#666'>...듣고 있습니다...</div>";
         };
 
-        // 녹음이 꺼졌을 때 동작
         recognition.onend = function() {
             if (isRecording && !isExplicitStop) {
-                // 의도치 않게 꺼진 경우 (재시작)
                 recognition.start();
             } else {
-                // 사용자가 멈춘 경우 -> [최종 결과 보여주기]
                 resetMicButtonUI();
-                showFinalComparison(); // 여기서 최종 비교 실행
+                showFinalComparison(); 
             }
         };
 
@@ -788,7 +779,6 @@
                     interim += event.results[i][0].transcript;
                 }
             }
-            // 말하는 도중에는 "듣고 있음" 상태만 업데이트 (또는 실시간 텍스트)
             const displayingText = finalTranscript + interim;
             if (displayingText.length > 0) {
                  resultBox.innerHTML = `<div style='color:#666'>...듣고 있습니다...<br>"${displayingText}"</div>`;
@@ -807,12 +797,10 @@
         if (!recognition) return;
         
         if (isRecording) {
-            // [멈춤 클릭] 명시적 종료 플래그 세움
             isExplicitStop = true; 
             isRecording = false;
             recognition.stop(); 
         } else {
-            // [시작 클릭]
             finalTranscript = ''; 
             recognition.start();
         }
@@ -833,9 +821,6 @@
         statusMsg.style.fontWeight = "normal";
     }
 
-    // ==========================================
-    // [NEW] 최종 결과 비교 및 표시 함수
-    // ==========================================
     function showFinalComparison() {
         resultBox.style.display = 'block';
         
@@ -843,30 +828,25 @@
         const correctText = verses ? verses[currentVerseIdx] : "";
         const userSpeech = finalTranscript.trim();
 
-        // 정규화 (비교를 위해 공백/특수문자 제거)
         const cleanUser = userSpeech.replace(/[^\w\sㄱ-ㅎㅏ-ㅣ가-힣]/g, '').replace(/\s+/g, '');
         const cleanTarget = correctText.replace(/[^\w\sㄱ-ㅎㅏ-ㅣ가-힣]/g, '').replace(/\s+/g, '');
 
         let html = "";
 
         if (cleanUser === cleanTarget && cleanUser.length > 0) {
-            // 100% 정답인 경우
             html = `<div style="text-align:center;">
                         <div style="font-size:3rem; margin-bottom:10px;">🎉</div>
                         <div class="correct" style="font-size:1.2rem;">완벽합니다! 정답입니다.</div>
                     </div>`;
-            targetTextEl.classList.remove('blur'); // 정답 공개
+            targetTextEl.classList.remove('blur'); 
         } else {
-            // 틀린 경우 (비교 화면)
             html = `<div style="text-align:center; margin-bottom:15px; font-weight:bold; color:#f44336;">
                         녹음 종료 (일치하지 않음)
                     </div>`;
             
-            // 1. 내가 한 말 (빨간색 강조)
             html += `<span class="comparison-label">❌ 내가 암송한 내용:</span>`;
             html += `<div class="user-text">${userSpeech || "(인식된 내용 없음)"}</div>`;
 
-            // 2. 정답 (초록색 강조)
             html += `<span class="comparison-label">✅ 정답 구절:</span>`;
             html += `<div class="correct-text">${correctText}</div>`;
         }
