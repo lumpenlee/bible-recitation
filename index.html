@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>계시록 암송 마스터 (Compact)</title>
+    <title>계시록 암송 마스터 (실시간보기)</title>
     <style>
         :root {
             --primary: #4CAF50;
@@ -27,7 +27,7 @@
 
         .app-container {
             width: 100%;
-            max-width: 800px; /* 모바일 최적화를 위해 폭 조정 */
+            max-width: 800px;
             padding: 15px;
             display: flex;
             flex-direction: column;
@@ -35,7 +35,6 @@
             box-sizing: border-box;
         }
 
-        /* --- [NEW] 상단 컨트롤 바 (한 줄 디자인) --- */
         .control-bar {
             background: var(--surface);
             padding: 15px;
@@ -48,10 +47,9 @@
             font-size: 1.1rem;
             font-weight: bold;
             color: #444;
-            flex-wrap: wrap; /* 화면이 너무 작으면 줄바꿈 허용 */
+            flex-wrap: wrap;
         }
 
-        /* 드롭다운 스타일 최적화 */
         .custom-select {
             padding: 8px 12px;
             font-size: 1.1rem;
@@ -70,10 +68,9 @@
         }
 
         .label-text {
-            white-space: nowrap; /* 줄바꿈 방지 */
+            white-space: nowrap;
         }
 
-        /* 암송 패널 */
         .panel-recitation {
             background: var(--surface);
             padding: 30px 20px;
@@ -86,7 +83,6 @@
             min-height: 400px;
         }
 
-        /* 현재 구절 표시 (작게) */
         .current-ref {
             font-size: 0.9rem;
             color: var(--secondary);
@@ -94,7 +90,7 @@
             margin-bottom: 15px;
             text-transform: uppercase;
             letter-spacing: 1px;
-            display: none; /* 상단 메뉴가 직관적이라 중복 표시 숨김 (원하면 block으로 변경) */
+            display: none;
         }
 
         .target-text {
@@ -113,7 +109,6 @@
             user-select: none;
         }
 
-        /* 마이크 버튼 UI */
         .mic-wrapper {
             position: relative;
             width: 90px;
@@ -153,7 +148,6 @@
             100% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0); }
         }
 
-        /* 결과 박스 */
         .result-box {
             background-color: #fff;
             border: 2px solid #eee;
@@ -180,6 +174,10 @@
         .user-text { color: #d32f2f; margin-bottom: 15px; padding-bottom:15px; border-bottom:1px solid #eee; }
         .correct-text { color: #2e7d32; }
         
+        /* 실시간 텍스트 스타일 */
+        .live-text { color: #333; }
+        .interim-text { color: #aaa; } /* 아직 확정되지 않은 흐릿한 글씨 */
+
         .toggle-link {
             color: #999;
             text-decoration: none;
@@ -196,15 +194,9 @@
     
     <div class="control-bar">
         <span class="label-text">계시록</span>
-        
-        <select id="chapter-select" class="custom-select" onchange="changeChapter()">
-            </select>
-        
+        <select id="chapter-select" class="custom-select" onchange="changeChapter()"></select>
         <span class="label-text">장</span>
-
-        <select id="verse-select" class="custom-select" onchange="changeVerseFromDropdown()">
-            </select>
-        
+        <select id="verse-select" class="custom-select" onchange="changeVerseFromDropdown()"></select>
         <span class="label-text">절</span>
     </div>
 
@@ -229,7 +221,7 @@
     // 1. 성경 데이터 (여기에 전체 데이터를 넣으세요)
     // ==========================================
     const bibleData = {
-    "1" :[
+     "1" :[
 "예수 그리스도의 계시라 이는 하나님이 그에게 주사 반드시 속히 될 일을 그 종들에게 보이시려고 그 천사를 그 종 요한에게 보내어 지시하신 것이라",
 "요한은 하나님의 말씀과 예수 그리스도의 증거 곧 자기의 본 것을 다 증거하였느니라",
 "이 예언의 말씀을 읽는 자와 듣는 자들과 그 가운데 기록한 것을 지키는 자들이 복이 있나니 때가 가까움이라",
@@ -662,9 +654,8 @@
     let finalTranscript = ''; 
     let isExplicitStop = false; 
     
-    // [UI 변경] 드롭다운 요소 참조
     const chapterSelect = document.getElementById('chapter-select');
-    const verseSelect = document.getElementById('verse-select'); // 절 선택 드롭다운
+    const verseSelect = document.getElementById('verse-select'); 
     
     const targetTextEl = document.getElementById('target-text');
     const refEl = document.getElementById('current-ref');
@@ -673,11 +664,10 @@
     const micBtn = document.getElementById('main-mic-btn');
 
     function init() {
-        // 장(Chapter) 드롭다운 채우기
         for (let i = 1; i <= 22; i++) {
             const option = document.createElement('option');
             option.value = i;
-            option.text = `${i}`; // "1", "2" ...
+            option.text = `${i}`; 
             chapterSelect.appendChild(option);
         }
         loadChapter(1);
@@ -688,26 +678,22 @@
         loadChapter(selectedCh);
     }
 
-    // [변경된 로직] 버튼 생성 -> 드롭다운 Option 생성
     function loadChapter(ch) {
         currentChapter = ch;
-        verseSelect.innerHTML = ''; // 기존 절 목록 초기화
+        verseSelect.innerHTML = ''; 
 
         const verses = bibleData[ch] || ["데이터 없음"];
 
-        // 절 드롭다운 채우기
         verses.forEach((verseText, index) => {
             const option = document.createElement('option');
-            option.value = index; // 0부터 시작하는 인덱스 저장
-            option.text = `${index + 1}`; // 화면엔 1부터 표시
+            option.value = index; 
+            option.text = `${index + 1}`; 
             verseSelect.appendChild(option);
         });
 
-        // 1절 자동 선택
         selectVerse(0);
     }
 
-    // 드롭다운 변경 시 호출되는 함수
     function changeVerseFromDropdown() {
         const selectedIdx = parseInt(verseSelect.value);
         selectVerse(selectedIdx);
@@ -715,8 +701,6 @@
 
     function selectVerse(index) {
         currentVerseIdx = index;
-        
-        // 드롭다운 값 동기화 (코드에서 호출될 때를 위해)
         verseSelect.value = index;
 
         const verses = bibleData[currentChapter] || ["데이터 없음"];
@@ -737,7 +721,7 @@
     }
 
     // ==========================================
-    // 음성 인식 로직 (변경 없음)
+    // 음성 인식 로직 (실시간 표시 + 중복 방지)
     // ==========================================
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition = null;
@@ -747,11 +731,9 @@
         recognition = new SpeechRecognition();
         recognition.lang = 'ko-KR';
         
-        // [수정 1] 연속 모드를 끕니다. (중복 버그 해결)
-        recognition.continuous = false; 
-        
-        // [수정 2] 중간 결과 보기를 끕니다. (깔끔한 인식을 위해 추천)
-        recognition.interimResults = false; 
+        // [설정] 오뚝이 모드 + 실시간 보기 활성화
+        recognition.continuous = false; // 모바일 버그 방지를 위해 끊어서 처리
+        recognition.interimResults = true; // 실시간 텍스트 보기 켜기
 
         recognition.onstart = function() {
             isRecording = true;
@@ -763,55 +745,43 @@
             statusMsg.style.fontWeight = "bold";
             resultBox.style.display = 'block'; 
             
-            // [수정 3] 듣고 있다는 문구만 표시 (실시간 텍스트 제거)
-            resultBox.innerHTML = "<div style='color:#666'>...듣고 있습니다...</div>";
+            // 처음 시작할 때 문구
+            if (finalTranscript.length === 0) {
+                resultBox.innerHTML = "<div style='color:#666'>...말씀하세요...</div>";
+            }
         };
 
-        // 녹음이 꺼졌을 때 동작 (오뚝이 기능)
         recognition.onend = function() {
             if (isRecording && !isExplicitStop) {
-                // 문장이 끝나서 자동으로 꺼지면 -> 즉시 다시 켭니다 (이어쓰기 효과)
+                // 자동으로 끊기면 바로 다시 시작 (오뚝이)
                 recognition.start();
             } else {
-                // 사용자가 정지 버튼을 누른 경우
+                // 사용자가 멈춘 경우 -> 최종 비교 화면
                 resetMicButtonUI();
                 showFinalComparison(); 
             }
         };
 
         recognition.onresult = function(event) {
-            // [수정 4] 결과 처리 방식 단순화 (중복 방지)
-            const transcript = event.results[0][0].transcript;
+            let interim = ''; // 현재 말하고 있는 중인(확정 안 된) 텍스트
             
-            // 기존 텍스트 뒤에 이어 붙이기 (공백 추가)
-            finalTranscript += (transcript + " ");
-            
-            // 화면에는 "듣고 있습니다..." 문구 유지하거나, 현재까지 인식된 내용 표시
-            resultBox.innerHTML = `<div style='color:#666'>...계속 듣고 있습니다...<br></div>`;
-        };
-
-        recognition.onend = function() {
-            if (isRecording && !isExplicitStop) {
-                recognition.start();
-            } else {
-                resetMicButtonUI();
-                showFinalComparison(); 
-            }
-        };
-
-        recognition.onresult = function(event) {
-            let interim = '';
+            // 결과 처리 루프
             for (let i = event.resultIndex; i < event.results.length; ++i) {
                 if (event.results[i].isFinal) {
-                    finalTranscript += event.results[i][0].transcript;
+                    // 문장이 끝났다고 판단되면 -> 저장소(finalTranscript)에 확정 저장
+                    finalTranscript += (event.results[i][0].transcript + " ");
                 } else {
+                    // 말하고 있는 중이면 -> 임시 변수(interim)에만 저장
                     interim += event.results[i][0].transcript;
                 }
             }
-            const displayingText = finalTranscript + interim;
-            if (displayingText.length > 0) {
-                 resultBox.innerHTML = `<div style='color:#666'>...듣고 있습니다...<br>"${displayingText}"</div>`;
-            }
+
+            // 화면 표시: [확정된 문장] + [말하고 있는 흐릿한 문장]
+            resultBox.innerHTML = `
+                <div style="font-size:1.1rem; line-height:1.6;">
+                    <span class="live-text">${finalTranscript}</span>
+                    <span class="interim-text">${interim}</span>
+                </div>`;
         };
 
         recognition.onerror = function(event) {
@@ -889,4 +859,3 @@
 
 </body>
 </html>
-
