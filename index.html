@@ -746,8 +746,12 @@
     if (SpeechRecognition) {
         recognition = new SpeechRecognition();
         recognition.lang = 'ko-KR';
-        recognition.continuous = true; 
-        recognition.interimResults = true; 
+        
+        // [수정 1] 연속 모드를 끕니다. (중복 버그 해결)
+        recognition.continuous = false; 
+        
+        // [수정 2] 중간 결과 보기를 끕니다. (깔끔한 인식을 위해 추천)
+        recognition.interimResults = false; 
 
         recognition.onstart = function() {
             isRecording = true;
@@ -758,7 +762,32 @@
             statusMsg.style.color = "#f44336"; 
             statusMsg.style.fontWeight = "bold";
             resultBox.style.display = 'block'; 
+            
+            // [수정 3] 듣고 있다는 문구만 표시 (실시간 텍스트 제거)
             resultBox.innerHTML = "<div style='color:#666'>...듣고 있습니다...</div>";
+        };
+
+        // 녹음이 꺼졌을 때 동작 (오뚝이 기능)
+        recognition.onend = function() {
+            if (isRecording && !isExplicitStop) {
+                // 문장이 끝나서 자동으로 꺼지면 -> 즉시 다시 켭니다 (이어쓰기 효과)
+                recognition.start();
+            } else {
+                // 사용자가 정지 버튼을 누른 경우
+                resetMicButtonUI();
+                showFinalComparison(); 
+            }
+        };
+
+        recognition.onresult = function(event) {
+            // [수정 4] 결과 처리 방식 단순화 (중복 방지)
+            const transcript = event.results[0][0].transcript;
+            
+            // 기존 텍스트 뒤에 이어 붙이기 (공백 추가)
+            finalTranscript += (transcript + " ");
+            
+            // 화면에는 "듣고 있습니다..." 문구 유지하거나, 현재까지 인식된 내용 표시
+            resultBox.innerHTML = `<div style='color:#666'>...계속 듣고 있습니다...<br></div>`;
         };
 
         recognition.onend = function() {
@@ -860,3 +889,4 @@
 
 </body>
 </html>
+
