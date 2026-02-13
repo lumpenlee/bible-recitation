@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>계시록 암송 마스터 (무한녹음)</title>
+    <title>계시록 암송 마스터 (반응형)</title>
     <style>
         :root {
-            --primary: #4CAF50;    /* 기본 녹색 */
-            --recording: #f44336;  /* 녹음 중 빨간색 */
+            --primary: #4CAF50;
+            --recording: #f44336;
             --secondary: #2196F3;
-            --bg: #f4f6f8;
+            --bg: #f0f2f5;
             --surface: #ffffff;
             --text-main: #333;
             --text-sub: #666;
@@ -19,100 +19,139 @@
             font-family: 'Pretendard', -apple-system, sans-serif;
             background-color: var(--bg);
             margin: 0;
-            padding: 10px;
+            padding: 0;
             color: var(--text-main);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
             min-height: 100vh;
+            display: flex;
+            justify-content: center;
         }
 
-        .controls {
+        /* 전체 레이아웃 컨테이너 */
+        .app-container {
             width: 100%;
-            max-width: 600px;
-            background: var(--surface);
-            padding: 15px;
-            border-radius: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
+            max-width: 1200px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column; /* 모바일 기본: 세로 정렬 */
+            gap: 20px;
             box-sizing: border-box;
         }
 
+        /* 1. 왼쪽 패널 (장/절 선택) */
+        .panel-controls {
+            background: var(--surface);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            flex: 1;
+        }
+
+        /* 2. 오른쪽 패널 (암송 영역) */
+        .panel-recitation {
+            background: var(--surface);
+            padding: 30px 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            flex: 2; /* PC에서 더 넓게 차지 */
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* --- [핵심] PC 화면 최적화 (가로 폭 768px 이상일 때) --- */
+        @media (min-width: 768px) {
+            .app-container {
+                flex-direction: row; /* 가로 정렬로 변경 */
+                align-items: flex-start;
+                padding-top: 40px;
+            }
+            
+            .panel-controls {
+                position: sticky; /* 스크롤 내려도 따라옴 */
+                top: 20px;
+                max-width: 350px; /* 너비 제한 */
+            }
+            
+            /* PC에서는 마우스 호버 효과 추가 */
+            .verse-btn:hover {
+                background-color: #ddd;
+                transform: translateY(-2px);
+            }
+        }
+
+        /* 요소별 스타일 */
         select {
             width: 100%;
             padding: 12px;
             font-size: 1.1rem;
-            border: 2px solid #ddd;
+            border: 2px solid #e0e0e0;
             border-radius: 8px;
             background-color: white;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             font-weight: bold;
+            cursor: pointer;
         }
 
         .verse-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
             gap: 8px;
-            max-height: 150px;
+            max-height: 300px; /* PC에선 더 길게 보여줌 */
             overflow-y: auto;
-            padding-right: 5px;
+            padding: 2px;
         }
 
         .verse-btn {
-            padding: 8px 0;
-            background-color: #eee;
-            border: none;
-            border-radius: 8px;
-            font-size: 0.9rem;
+            aspect-ratio: 1; /* 정사각형 유지 */
+            background-color: #f5f5f5;
+            border: 1px solid #eee;
+            border-radius: 10px;
+            font-size: 1rem;
             cursor: pointer;
             transition: all 0.2s;
+            color: #555;
         }
 
         .verse-btn.active {
             background-color: var(--secondary);
             color: white;
             font-weight: bold;
-            box-shadow: 0 2px 5px rgba(33, 150, 243, 0.3);
-        }
-
-        .recitation-area {
-            width: 100%;
-            max-width: 600px;
-            background: var(--surface);
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-            text-align: center;
-            box-sizing: border-box;
+            border-color: var(--secondary);
+            box-shadow: 0 4px 10px rgba(33, 150, 243, 0.3);
         }
 
         .current-ref {
-            font-size: 0.9rem;
-            color: var(--text-sub);
-            font-weight: bold;
-            margin-bottom: 10px;
-            display: block;
+            font-size: 1rem;
+            color: var(--secondary);
+            font-weight: 800;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .target-text {
-            font-size: 1.2rem;
-            line-height: 1.6;
-            margin: 20px 0;
+            font-size: 1.35rem; /* 글씨 크기 키움 */
+            line-height: 1.7;
+            margin: 20px 0 30px 0;
             word-break: keep-all;
-            min-height: 60px;
+            min-height: 80px;
+            width: 100%;
+            max-width: 600px;
         }
 
         .blur {
-            filter: blur(8px);
-            opacity: 0.7;
+            filter: blur(12px); /* 블러 강도 강화 */
+            opacity: 0.5;
             user-select: none;
         }
 
+        /* 마이크 버튼 UI */
         .mic-wrapper {
             position: relative;
-            width: 80px;
-            height: 80px;
-            margin: 20px auto;
+            width: 90px;
+            height: 90px;
+            margin: 10px auto 20px;
         }
 
         .mic-btn {
@@ -120,91 +159,92 @@
             height: 100%;
             border-radius: 50%;
             border: none;
-            background-color: var(--primary);
+            background: linear-gradient(145deg, #4CAF50, #43A047);
             color: white;
-            font-size: 32px;
+            font-size: 36px;
             cursor: pointer;
-            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+            box-shadow: 0 6px 15px rgba(76, 175, 80, 0.4);
             z-index: 2;
             position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background-color 0.3s ease, transform 0.1s;
+            transition: all 0.3s ease;
         }
 
-        .mic-btn:active {
-            transform: scale(0.95);
-        }
+        .mic-btn:active { transform: scale(0.92); }
 
         .mic-btn.listening {
-            background-color: var(--recording) !important;
-            box-shadow: 0 0 0 5px rgba(244, 67, 54, 0.3);
+            background: linear-gradient(145deg, #f44336, #d32f2f) !important;
+            box-shadow: 0 0 0 6px rgba(244, 67, 54, 0.2);
             animation: pulse-red 1.5s infinite;
         }
 
         @keyframes pulse-red {
-            0% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.7); }
-            70% { box-shadow: 0 0 0 15px rgba(244, 67, 54, 0); }
+            0% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.6); }
+            70% { box-shadow: 0 0 0 20px rgba(244, 67, 54, 0); }
             100% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0); }
         }
 
         .result-box {
-            background-color: #f8f9fa;
-            border-radius: 10px;
-            padding: 15px;
+            background-color: #f1f8e9;
+            border: 1px solid #c8e6c9;
+            border-radius: 12px;
+            padding: 20px;
             margin-top: 20px;
             text-align: left;
-            font-size: 1rem;
-            line-height: 1.5;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            width: 100%;
+            max-width: 600px;
+            box-sizing: border-box;
         }
         
-        .correct { color: var(--primary); font-weight: bold; }
-        .incorrect { color: #f44336; text-decoration: line-through; margin-right: 5px; }
-        
+        .correct { color: #2e7d32; font-weight: bold; }
         .toggle-link {
-            color: #888;
-            text-decoration: underline;
-            font-size: 0.85rem;
+            color: #999;
+            text-decoration: none;
+            font-size: 0.9rem;
             cursor: pointer;
-            margin-top: 5px;
-            display: inline-block;
+            margin-bottom: 20px;
+            border-bottom: 1px dashed #ccc;
         }
-
     </style>
 </head>
 <body>
 
-    <div class="controls">
-        <label for="chapter-select" style="font-size:0.9rem; color:#666; margin-bottom:5px; display:block;">장 선택 (Chapter)</label>
-        <select id="chapter-select" onchange="changeChapter()">
-            </select>
+<div class="app-container">
+    
+    <div class="panel-controls">
+        <h3 style="margin:0 0 15px 0; color:#444;">📖 성경 선택</h3>
+        <label for="chapter-select" style="font-size:0.85rem; color:#888; margin-bottom:5px; display:block;">장 (Chapter)</label>
+        <select id="chapter-select" onchange="changeChapter()"></select>
 
-        <div style="font-size:0.9rem; color:#666; margin-bottom:8px;">절 선택 (Verse)</div>
-        <div id="verse-container" class="verse-grid">
-            </div>
+        <div style="font-size:0.85rem; color:#888; margin-bottom:10px;">절 (Verse)</div>
+        <div id="verse-container" class="verse-grid"></div>
     </div>
 
-    <div class="recitation-area">
+    <div class="panel-recitation">
         <span id="current-ref" class="current-ref">요한계시록 1:1</span>
         
-        <div id="target-text" class="target-text blur">
-            </div>
-        <div class="toggle-link" onclick="toggleBlur()">👀 정답 보기/가리기</div>
+        <div id="target-text" class="target-text blur"></div>
+        <div class="toggle-link" onclick="toggleBlur()">정답 보기/가리기</div>
 
         <div class="mic-wrapper" id="mic-wrapper">
             <button id="main-mic-btn" class="mic-btn" onclick="toggleRecording()">🎙️</button>
         </div>
-        <div id="status-msg" style="color:#888; font-size:0.8rem; height:20px; margin-top:10px;">버튼을 눌러 암송 시작</div>
+        <div id="status-msg" style="color:#888; font-size:0.9rem; height:24px; font-weight:500;">버튼을 눌러 암송 시작</div>
 
         <div id="result-box" class="result-box" style="display:none;"></div>
     </div>
 
+</div>
+
 <script>
     // ==========================================
-    // 1. 성경 데이터 (이전과 동일하게 채워주세요)
+    // 1. 성경 데이터 (기존 데이터 유지)
     // ==========================================
-    const bibleData = {
+      const bibleData = {
 "1" :[
 "예수 그리스도의 계시라 이는 하나님이 그에게 주사 반드시 속히 될 일을 그 종들에게 보이시려고 그 천사를 그 종 요한에게 보내어 지시하신 것이라",
 "요한은 하나님의 말씀과 예수 그리스도의 증거 곧 자기의 본 것을 다 증거하였느니라",
@@ -634,12 +674,11 @@
     };
 
     // ==========================================
-    // 2. 앱 로직 (수정 없음)
+    // 2. 앱 로직 (기존 로직 유지)
     // ==========================================
-    
     let currentChapter = 1;
     let currentVerseIdx = 0; 
-    let finalTranscript = ''; // [NEW] 누적된 전체 텍스트 저장 변수
+    let finalTranscript = '';
     
     const chapterSelect = document.getElementById('chapter-select');
     const verseContainer = document.getElementById('verse-container');
@@ -696,7 +735,6 @@
         resultBox.style.display = 'none';
         resultBox.innerHTML = '';
         
-        // 버튼 상태 리셋
         forceStopRecording();
     }
 
@@ -705,22 +743,19 @@
     }
 
     // ==========================================
-    // 3. 음성 인식 및 결과 처리 (무한 녹음 로직 적용)
+    // 3. 음성 인식 로직 (연속 듣기 + 수동 정지)
     // ==========================================
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition = null;
-    let isRecording = false;     // 현재 녹음 중인지 여부 (의도적)
-    let ignoreEndEvent = false;  // 자동 종료 방지 플래그
+    let isRecording = false;    
+    let ignoreEndEvent = false; 
 
     if (SpeechRecognition) {
         recognition = new SpeechRecognition();
         recognition.lang = 'ko-KR';
-        
-        // [핵심] 연속 인식 모드 활성화 (문장이 끝나도 계속 들음)
         recognition.continuous = true; 
-        recognition.interimResults = true; // 실시간으로 말하는 것을 화면에 뿌려줌
+        recognition.interimResults = true; 
 
-        // 녹음 시작 시 UI 변경
         recognition.onstart = function() {
             isRecording = true;
             micBtn.classList.add('listening'); 
@@ -728,24 +763,19 @@
             statusMsg.innerText = "🔴 녹음 중... (버튼을 눌러야 멈춥니다)"; 
             statusMsg.style.color = "#f44336"; 
             statusMsg.style.fontWeight = "bold";
-            resultBox.style.display = 'block'; // 시작하자마자 결과창 보이기
+            resultBox.style.display = 'block'; 
         };
 
-        // 녹음 종료 이벤트 (자동으로 꺼지는 것 방지)
         recognition.onend = function() {
             if (isRecording) {
-                // 사용자가 멈춘 게 아닌데 꺼졌다면? -> 다시 켬 (오뚝이 로직)
                 recognition.start();
             } else {
-                // 사용자가 진짜 멈췄을 때
                 resetMicButtonUI();
             }
         };
 
-        // 결과 처리 (말할 때마다 호출됨)
         recognition.onresult = function(event) {
             let interim = '';
-            // 현재 세션의 누적된 텍스트 계산
             for (let i = event.resultIndex; i < event.results.length; ++i) {
                 if (event.results[i].isFinal) {
                     finalTranscript += event.results[i][0].transcript;
@@ -753,41 +783,29 @@
                     interim += event.results[i][0].transcript;
                 }
             }
-            
-            // 화면에 실시간 표시 및 정답 체크
             checkAnswer(finalTranscript + interim);
         };
 
         recognition.onerror = function(event) {
             console.error(event.error);
-            if (event.error == 'no-speech') {
-                // 침묵 에러는 무시하고 계속 진행
-                return;
-            }
-            // 진짜 에러일 경우 종료
-            // forceStopRecording(); 
-            // statusMsg.innerText = "오류 발생: " + event.error;
+            if (event.error == 'no-speech') return;
         };
     } else {
         alert("이 브라우저는 음성 인식을 지원하지 않습니다 (Chrome, Safari 사용 권장).");
         micBtn.disabled = true;
     }
 
-    // 버튼 클릭 시 호출되는 메인 함수
     function toggleRecording() {
         if (!recognition) return;
         
         if (isRecording) {
-            // 녹음 중이면 -> 멈춤 (수동 종료)
             forceStopRecording();
         } else {
-            // 녹음 시작
-            finalTranscript = ''; // 기존 텍스트 초기화
+            finalTranscript = ''; 
             recognition.start();
         }
     }
 
-    // 강제로 녹음 중단 및 UI 초기화
     function forceStopRecording() {
         isRecording = false;
         if (recognition) recognition.stop();
@@ -803,7 +821,6 @@
     }
 
     function checkAnswer(userSpeech) {
-        // 실시간으로 비교
         const verses = bibleData[currentChapter];
         const correctText = verses ? verses[currentVerseIdx] : "";
         
@@ -816,18 +833,15 @@
             displayHTML += `<div class="correct">🎉 완벽합니다! 정답입니다.</div>`;
             targetTextEl.classList.remove('blur'); 
         } else if (cleanUser.length > 0) {
-             // 말하고 있는 중...
             displayHTML += `<div style="color:#666">...듣고 있습니다...</div>`;
         }
 
         resultBox.innerHTML = displayHTML;
     }
 
-    // 앱 시작
     init();
 
 </script>
 
 </body>
 </html>
-
